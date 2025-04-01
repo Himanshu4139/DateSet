@@ -5,12 +5,68 @@ import Header from '../Common/Header';
 import { GoogleAuthProvider,signInWithPopup } from 'firebase/auth';
 import { auth } from "./firebase";
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import axios from 'axios';
+
+
+
 
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [gender, setGender] = useState("");
+
+
   const navigate = useNavigate();
+
+
+
+  // Sign In handler
+  async function handleSignIn(e) {
+    try {
+      e.preventDefault();
+      console.log(email,password);
+      
+      const response = await axios.post("http://localhost:5000/api/user/login", {
+        email: email,
+        password: password,
+      });
+      if (response.status === 200) {
+        Cookies.set("token", response.data.token, { path: "/" });
+        navigate("/");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  // Sign Up handler
+  async function handleSignUp(e) {
+    try {
+      e.preventDefault();
+      console.log(email, password, name, mobile, gender);
+      
+      const response = await axios.post("http://localhost:5000/api/user/register", {
+        email: email,
+        password: password,
+        name: name,
+        mobile: mobile,
+        gender: gender,
+      });
+      if (response.status === 201) {
+        Cookies.set("token", response.data.token, { path: "/" });
+        navigate("/");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+
 
     // Google login handler
     async function handleGoogleSignIn() {
@@ -20,7 +76,7 @@ const AuthForm = () => {
         
         if (result.user) {
           console.log("Google login successful:", result.user);
-          navigate("/profile");
+          navigate("/");
         }
       } catch (error) {
         console.error("Google login failed:", error);
@@ -68,7 +124,7 @@ const AuthForm = () => {
                 {isLogin ? 'Welcome back!' : 'Create your account'}
               </h2>
 
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={isLogin ? handleSignIn : handleSignUp}>
                 {!isLogin && (
                   <div className="space-y-4">
                     {/* Username field */}
@@ -79,6 +135,8 @@ const AuthForm = () => {
                       <input
                         type="text"
                         placeholder="Username"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
@@ -91,6 +149,8 @@ const AuthForm = () => {
                       <input
                         type="tel"
                         placeholder="Mobile number"
+                        value={mobile}
+                        onChange={(e) => setMobile(e.target.value)}
                         className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
@@ -105,6 +165,8 @@ const AuthForm = () => {
                   <input
                     type="email"
                     placeholder="Email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -117,6 +179,8 @@ const AuthForm = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                   <button
@@ -151,11 +215,12 @@ const AuthForm = () => {
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Gender</label>
                     <div className="grid grid-cols-3 gap-2">
-                      {['Male', 'Female', 'Other'].map((gender) => (
+                      {['male', 'female', 'non-binary'].map((gender) => (
                         <label key={gender} className="flex items-center space-x-2">
                           <input
                             type="radio"
-                            name="gender"
+                            value={gender}
+                            onChange={(e) => setGender(e.target.value)}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
                           <span className="text-sm text-gray-700">{gender}</span>
