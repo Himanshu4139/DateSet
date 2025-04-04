@@ -1,6 +1,6 @@
 import React from 'react'
-import Header from '../Common/Header'
-import Footer from '../Common/Footer'
+import Header from '../Components/Common/Header'
+import Footer from '../Components/Common/Footer'
 const Profile = () => {
   return (
      <div>

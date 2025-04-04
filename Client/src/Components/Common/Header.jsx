@@ -1,12 +1,13 @@
 import React from 'react'
 import { FaBell } from 'react-icons/fa'
 
+
 const Header = () => {
   return (
     <header className="flex items-center justify-between bg-pink-500 p-4 shadow-md">
       {/* Logo/Image */}
       <img
-        src="https://via.placeholder.com/40"
+        src="https://cdn.pixabay.com/photo/2016/12/27/13/10/logo-1933884_640.png"
         alt="Logo"
         className="w-10 h-10 rounded-full"
       />

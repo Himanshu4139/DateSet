@@ -7,8 +7,7 @@ import { auth } from "./firebase";
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import axios from 'axios';
-
-
+import toast from 'react-hot-toast';
 
 
 
@@ -26,71 +25,119 @@ const AuthForm = () => {
 
 
 
-  // Sign In handler
-  async function handleSignIn(e) {
-    try {
-      e.preventDefault();
-      console.log(email,password);
-      
-      const response = await axios.post("http://localhost:5000/api/user/login", {
-        email: email,
-        password: password,
-      });
-      if (response.status === 200) {
-        Cookies.set("token", response.data.token, { path: "/" });
-        navigate("/");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
   // Sign Up handler
-  async function handleSignUp(e) {
-    try {
-      e.preventDefault();
-      console.log(email, password, name, mobile, gender);
+async function handleSignUp(e) {
+  try {
+    e.preventDefault();
+    
+    if (!password || password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    const response = await axios.post("http://localhost:4000/api/user/register", {
+      email, password, name, mobile, gender
+    });
+
+    if (response.status === 201) {
+      Cookies.set("token", response.data.token, { path: "/" });
+      toast.success('Registration successful!');
+      navigate("/");
+    }
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
       
-      const response = await axios.post("http://localhost:5000/api/user/register", {
-        email: email,
-        password: password,
-        name: name,
-        mobile: mobile,
-        gender: gender,
-      });
-      if (response.status === 201) {
-        Cookies.set("token", response.data.token, { path: "/" });
-        navigate("/");
+      if (status === 400) {
+        toast.error('This email is already registered');
+      } 
+      else if (status === 403 && data.authMethod === 'google') {
+        toast.error('Account exists with Google. Please login via Google instead');
       }
-    } catch (error) {
-      console.error(error);
+    } else {
+      toast.error('Registration failed. Please try again.');
     }
   }
+}
 
+// Sign In handler
+async function handleSignIn(e) {
+  try {
+    e.preventDefault();
+    
+    const response = await axios.post("http://localhost:4000/api/user/login", {
+      email, password
+    });
 
+    if (response.status === 200) {
+      Cookies.set("token", response.data.token, { path: "/" });
+      toast.success('Login successful!');
+      navigate("/");
+    }
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        toast.error('Invalid email or password');
+      }
+      else if (status === 403 && data.authMethod === 'google') {
+        toast.error('Please login via Google instead');
+      }
+    } else {
+      toast.error('Login failed. Please try again.');
+    }
+  }
+}
 
-    // Google login handler
+    // Google login handler handleGoogleSignIn
     async function handleGoogleSignIn() {
       try {
+        //setIsLoading(true);
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         
+        
         if (result.user) {
-          console.log("Google login successful:", result.user);
-          navigate("/");
+          const { displayName, email, uid } = result.user;
+          
+          // Automatically set defaults without prompting user
+          const payload = {
+            name: displayName || 'User',
+            email,
+            googleId: uid,
+            gender: 'non-binary' // Default gender
+          };
+    
+          const response = await axios.post("http://localhost:4000/api/user/google-auth", payload);
+    
+          if (response.status === 200 || response.status === 201) {
+            Cookies.set("token", response.data.token, { path: "/" });
+            toast.success(
+              response.status === 201 
+                ? 'Account created successfully with Google!' 
+                : 'Logged in successfully with Google!'
+            );
+            navigate("/");
+          }
         }
       } catch (error) {
-        console.error("Google login failed:", error);
-        navigate("/auth");
-        // Handle specific errors
+        console.error("Google authentication failed:", error);
+        
         if (error.code === 'auth/popup-closed-by-user') {
-          alert("You closed the login popup. Please try again.");
+          toast.error("You closed the login popup. Please try again.");
         } else if (error.code === 'auth/network-request-failed') {
-          alert("Network error. Please check your internet connection.");
+          toast.error("Network error. Please check your internet connection.");
         } else {
-          alert("Login failed. Please try again later.");
+          toast.error(error.response?.data?.message || "Authentication failed. Please try again.");
         }
-      }
-    }
+        
+        navigate("/auth");
+       } //finally {
+      //   //setIsLoading(false);
+      // }
+    }  
+   
 
   return (
     <div>

@@ -2,8 +2,8 @@ import React from 'react'
 import { Routes, Route } from 'react-router-dom';
 import UserRegister from './Components/Auth/UserRegister'
 import Header from './Components/Common/Header'
-import Profile from './Components/Pages/Profile'
-import Home from './Components/Pages/Home';
+import Profile from './Pages/Profile'
+import Home from './Pages/Home';
 
 
 function App() {

@@ -10,7 +10,11 @@ const { urlencoded } = require('body-parser');
 
 const userRoutes = require('./routes/user.routes');
 
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173', // Your Vite frontend URL
+    credentials: true
+  }));
+  
 app.use(express.json());
 app.use(urlencoded({ extended: true }));
 

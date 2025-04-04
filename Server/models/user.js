@@ -55,13 +55,33 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    // required: true,
+    required: function() { return !this.googleId; },
     minlength: 6
   },
+ 
   mobile: {
     type: String,
-    required: true,
-    match: /^\d{10}$/
+    required: function() { return !this.googleId; }, // Only required for non-Google users
+    validate: {
+      validator: function(v) {
+        // Accepts either:
+        // 1. Standard 10-digit number OR
+        // 2. Google placeholder (google-<id>)
+        return !v || /^\d{10}$/.test(v) || /^google-[a-z0-9-]+$/i.test(v);
+      },
+      message: 'Mobile must be 10 digits or Google placeholder'
+    },
+    default: function() {
+      return this.googleId ? `google-${this._id}` : '0000000000';
+    }
+  },
+
+  //Google Auth
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
   },
 
   // Basic Info
@@ -73,7 +93,13 @@ const UserSchema = new Schema({
   gender: {
     type: String,
     enum: ['male', 'female', 'non-binary'],
+    default: 'non-binary', // Google Auth
     required: true
+  },
+  //Google Auth
+  isVerified: {
+    type: Boolean,
+    default: false
   },
   
   // Profile
@@ -103,7 +129,7 @@ UserSchema.virtual('age').get(function() {
 
 // Indexes
 UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ mobile: 1 }, { unique: true });
+//UserSchema.index({ mobile: 1 }, { unique: true }); // Warning: Do not uncomment this error  otherwise u will b in trouble 
 UserSchema.index({ 'location': '2dsphere' }); // For geo queries
 UserSchema.index({ 'profile.preferenceGender': 1, age: 1 });
 
@@ -114,7 +140,7 @@ UserSchema.statics.hashPassword = async function(password) {
     return await bcrypt.hash(password, 10);
 };
 
-// Compare password method
+//Compare password method
 UserSchema.methods.comparePassword = async function(enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };

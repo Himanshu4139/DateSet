@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../Common/Header';
-import Footer from '../Common/Footer';
+import Header from '../Components/Common/Header';
+import Footer from '../Components/Common/Footer';
 import { MdMessage } from "react-icons/md";
 import { FaRegUser } from "react-icons/fa";
 import { RxChevronLeft, RxChevronRight } from "react-icons/rx";
-import OnlineUserBox from '../Common/OnlineUserBox';
+import OnlineUserBox from '../Components/Common/OnlineUserBox';
 
 
 const images = [
