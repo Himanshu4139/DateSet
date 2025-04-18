@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const mongoose = require('mongoose');
 
 module.exports.register = async (req, res) => {
   try {
@@ -207,5 +208,730 @@ exports.googleAuth = async (req, res) => {
   }
 };
 
+module.exports.getUser = async (req, res) => {
+  try {
+    // 1. Validate token presence
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ 
+        message: 'Authentication required - No token found',
+        code: 'NO_TOKEN'
+      });
+    }
 
+    // 2. Verify token with proper error handling
+    let decoded;
+    try {
+      decoded = User.verifyToken(token);
+    } catch (error) {
+      console.error('Token verification error:', error);
+      
+      return res.status(401).json({
+        message: 'Invalid or expired session',
+        code: 'INVALID_TOKEN',
+        action: 'reauthenticate'
+      });
+    }
+
+    // 3. Validate user ID from token
+    if (!decoded?.id || !mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user identifier',
+        code: 'INVALID_USER_ID'
+      });
+    }
+
+    // 4. Fetch user with security precautions
+    const user = await User.findById(decoded.id)
+      .select('-password -__v -resetToken -resetExpires') // Exclude sensitive fields
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User account not found',
+        code: 'USER_NOT_FOUND',
+        action: 'register'
+      });
+    }
+
+    // 6. Add security headers
+    res.setHeader('Content-Security-Policy', "default-src 'self'");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+
+  } catch (error) {
+    console.error('User fetch error:', error);
+    
+    // Handle specific database errors
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        message: 'Invalid user identifier format',
+        code: 'INVALID_ID_FORMAT'
+      });
+    }
+
+    res.status(500).json({
+      message: 'Account information temporarily unavailable',
+      code: 'SERVER_ERROR',
+      retryAfter: 30, // Seconds
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+module.exports.updateUser = async (req, res) => {
+  try {
+    // 1. Verify and decode token
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ 
+        message: 'Authentication required', 
+        code: 'NO_TOKEN' 
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+    
+    // 2. Validate user ID
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({ 
+        message: 'Invalid user ID', 
+        code: 'INVALID_ID' 
+      });
+    }
+
+    // 3. Define allowed fields and create update object
+    const allowedUpdates = {
+      user: ['name', 'gender'],
+      profile: ['bio', 'dateOfBirth', 'interests', 'zodiac', 'status', 'city', 'images', 'preference']
+    };
+    
+    const updates = Object.keys(req.body).filter(key => 
+      allowedUpdates.user.includes(key) || 
+      allowedUpdates.profile.includes(key)
+    );
+
+    const updateObj = {};
+    updates.forEach(update => {
+      if (allowedUpdates.user.includes(update)) {
+        // Handle root-level fields
+        updateObj[update] = req.body[update];
+      } else {
+        // Handle profile subdocument fields
+        updateObj[`profile.${update}`] = req.body[update];
+      }
+    });
+
+    // 4. Construct update object with profile fields
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.id,
+      { $set: updateObj },
+      { 
+        new: true,
+        runValidators: true,
+        select: '-password -__v -resetToken -resetExpires'
+      }
+    ).lean();
+
+    if (!updatedUser) {
+      return res.status(404).json({ 
+        message: 'User not found', 
+        code: 'USER_NOT_FOUND' 
+      });
+    }
+
+
+    // 6. Format response
+    const responseData = {
+      id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      gender: updatedUser.gender,
+      profile: {
+        ...updatedUser.profile,
+        dateOfBirth: updatedUser.profile.dateOfBirth?.toISOString().split('T')[0]
+      }
+    };
+
+    res.status(200).json({
+      success: true,
+      data: responseData
+    });
+
+  } catch (error) {
+    console.error('Update error:', error);
+    
+    // Handle specific errors
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        message: 'Session expired', 
+        code: 'SESSION_EXPIRED' 
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => ({
+        field: err.path,
+        message: err.message
+      }));
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        code: 'VALIDATION_ERROR',
+        errors 
+      });
+    }
+
+    res.status(500).json({
+      message: 'Update failed',
+      code: 'SERVER_ERROR',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+module.exports.allProfile = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Fetch all users except the one associated with the token
+    const users = await User.find({ _id: { $ne: decoded.id } })
+      .select('-password -__v -resetToken -resetExpires') // Exclude sensitive fields
+      .lean();
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        message: 'No other profiles found',
+        code: 'NO_PROFILES',
+      });
+    }
+
+    // 4. Return the list of profiles
+    res.status(200).json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    console.error('Error fetching profiles:', error);
+
+    // Handle specific errors
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        message: 'Session expired',
+        code: 'SESSION_EXPIRED',
+      });
+    }
+
+    res.status(500).json({
+      message: 'Failed to fetch profiles',
+      code: 'SERVER_ERROR',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+module.exports.rightSwipe = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    const id = req.params.id;
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Find both users
+    const currentUser = await User.findById(decoded.id);
+    const targetUser = await User.findById(id);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Update sendRequest array for current user
+    if (!currentUser.sendRequest.includes(id)) {
+      currentUser.sendRequest.push(id);
+      await currentUser.save();
+    }
+
+    // 5. Update receiveRequest array for target user
+    if (!targetUser.receiveRequest.includes(decoded.id)) {
+      targetUser.receiveRequest.push(decoded.id);
+      await targetUser.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Request sent successfully'
+    });
+
+
+  } catch (error) {
+    console.error('Error fetching profiles:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+module.exports.leftSwipe = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    const id = req.params.id;
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Find both users
+    const currentUser = await User.findById(decoded.id);
+    const targetUser = await User.findById(id);
+
+    
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Update blockRequest array for current user
+    if (!currentUser.blockRequest.includes(id)) {
+      currentUser.blockRequest.push(id);
+    }
+
+    // 5. Update blockRequest array for target user
+    if (!targetUser.blockRequest.includes(decoded.id)) {
+      targetUser.blockRequest.push(decoded.id);
+    }
+
+    // 6. Remove from matched array for both users
+    currentUser.matched = currentUser.matched.filter(
+      (uid) => uid.toString() !== id
+    );
+    targetUser.matched = targetUser.matched.filter(
+      (uid) => uid.toString() !== decoded.id
+    );
+
+    // 7. Save changes to both users
+    await currentUser.save();
+    await targetUser.save();
+
+    // 8. Send success response
+    res.status(200).json({
+      success: true,
+      message: 'User blocked and removed from matches successfully',
+    });
+  }
+  catch (error) {
+    console.error('Error processing left swipe:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.me = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const id = req.params.id;
+    // 3. Fetch the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+    // 4. Send success response
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.sendRequests = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Fetch the user and populate the sendRequest field
+    const user = await User.findById(decoded.id)
+      .populate({
+        path: 'sendRequest', // Populate the sendRequest field
+        select: '-password -__v -resetToken -resetExpires', // Exclude sensitive fields
+      })
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Send success response with populated data
+    res.status(200).json({
+      success: true,
+      data: user.sendRequest, // This will now contain full user data
+    });
+  } catch (error) {
+    console.error('Error fetching send requests:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.receiveRequests = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Fetch the user and populate the receiveRequest field
+    const user = await User.findById(decoded.id)
+      .populate({
+        path: 'receiveRequest', // Populate the receiveRequest field
+        select: '-password -__v -resetToken -resetExpires', // Exclude sensitive fields
+      })
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Send success response with populated data
+    res.status(200).json({
+      success: true,
+      data: user.receiveRequest, // This will now contain full user data
+    });
+  } catch (error) {
+    console.error('Error fetching receive requests:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.matches = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Fetch the user and populate the matches field
+    const user = await User.findById(decoded.id)
+      .populate({
+        path: 'matched', // Populate the matched field
+        select: '-password -__v -resetToken -resetExpires', // Exclude sensitive fields
+      })
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Send success response with populated data
+    res.status(200).json({
+      success: true,
+      data: user.matched, // This will now contain full user data
+    });
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.removeSentRequest = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    const id = req.params.id; // ID of the target user
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Find both users
+    const currentUser = await User.findById(decoded.id);
+    const targetUser = await User.findById(id);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Remove the request from both users
+    currentUser.sendRequest = currentUser.sendRequest.filter(
+      (uid) => uid.toString() !== id
+    );
+    targetUser.receiveRequest = targetUser.receiveRequest.filter(
+      (uid) => uid.toString() !== decoded.id
+    );
+
+    await currentUser.save();
+    await targetUser.save();
+
+    // 5. Send success response
+    res.status(200).json({
+      success: true,
+      message: 'Request removed successfully',
+    });
+  } catch (error) {
+    console.error('Error removing request:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.acceptRequest = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    const id = req.params.id; // ID of the target user
+    if (!token) {
+      return res.status(401).json({
+      message: 'Authentication required',
+      code: 'NO_TOKEN',
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+      message: 'Invalid user ID',
+      code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Find both users
+    const currentUser = await User.findById(decoded.id);
+    const targetUser = await User.findById(id);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({
+      message: 'User not found',
+      code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Remove from receiveRequest/sendRequest and add to matched for both users
+    currentUser.receiveRequest = currentUser.receiveRequest.filter(
+      uid => uid.toString() !== id
+    );
+    targetUser.sendRequest = targetUser.sendRequest.filter(
+      uid => uid.toString() !== decoded.id
+    );
+
+    // Add to matched arrays if not already present
+    if (!currentUser.matched.includes(id)) {
+      currentUser.matched.push(id);
+    }
+    if (!targetUser.matched.includes(decoded.id)) {
+      targetUser.matched.push(decoded.id);
+    }
+
+    await currentUser.save();
+    await targetUser.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Request accepted successfully',
+    });
+  } catch (error) {
+    console.error('Error accepting request:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
+
+module.exports.denyRequest = async (req, res) => {
+  try {
+    // 1. Verify and decode the token
+    const token = req.cookies.token;
+    const id = req.params.id; // ID of the target user
+    if (!token) {
+      return res.status(401).json({
+        message: 'Authentication required',
+        code: 'NO_TOKEN',
+      });
+    }
+
+    const decoded = User.verifyToken(token);
+
+    // 2. Validate user ID from the token
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({
+        message: 'Invalid user ID',
+        code: 'INVALID_ID',
+      });
+    }
+
+    // 3. Find both users
+    const currentUser = await User.findById(decoded.id);
+    const targetUser = await User.findById(id);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({
+        message: 'User not found',
+        code: 'USER_NOT_FOUND',
+      });
+    }
+
+    // 4. Remove from receiveRequest and sendRequest
+    currentUser.receiveRequest = currentUser.receiveRequest.filter(
+      (uid) => uid.toString() !== id
+    );
+    targetUser.sendRequest = targetUser.sendRequest.filter(
+      (uid) => uid.toString() !== decoded.id
+    );
+
+    await currentUser.save();
+    await targetUser.save();
+
+    // 5. Send success response
+    res.status(200).json({
+      success: true,
+      message: 'Request denied successfully',
+    });
+  } catch (error) {
+    console.error('Error denying request:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+};
 

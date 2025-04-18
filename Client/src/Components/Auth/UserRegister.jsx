@@ -262,7 +262,7 @@ async function handleSignIn(e) {
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Gender</label>
                     <div className="grid grid-cols-3 gap-2">
-                      {['male', 'female', 'non-binary'].map((gender) => (
+                      {['Male', 'Female', 'Non-Binary'].map((gender) => (
                         <label key={gender} className="flex items-center space-x-2">
                           <input
                             type="radio"

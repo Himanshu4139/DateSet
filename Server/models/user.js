@@ -7,9 +7,8 @@ dotenv.config();
 
 const ProfileSchema = new Schema({
   images: {
-    type: [String], // Array of image URLs
-    default: [],
-    validate: [imgLimit, 'Maximum 6 images allowed']
+    type: [String], 
+    default: []
   },
   bio: {
     type: String,
@@ -17,29 +16,32 @@ const ProfileSchema = new Schema({
     default: ''
   },
   dateOfBirth: {
-    type: Date
+    type: Date,
+    required: false
   },
-  location: {
-    type: {
-      type: String,
-      default: 'Point',
-      enum: ['Point']
-    },
-    coordinates: [Number] // [longitude, latitude]
-  },
-  interests: [String],
-  preferenceGender: {
+  interests: {
     type: [String],
-    enum: ['male', 'female', 'non-binary'],
+    default: []
   },
-  preferenceAgeRange: {
-    type: {
-      min: { type: Number, min: 18, max: 99 },
-      max: { type: Number, min: 18, max: 99 }
-    },
-    default: { min: 18, max: 99 }
+  zodiac: {
+    type: String,
+    enum: [
+      'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+    ]
+  },
+  status: {
+    type: String,
+    enum: ['Friendship', 'Marriage', 'Casual', 'Long Term', 'Networking']
+  },
+  preference: {
+    type: String,
+    enum: ['Male', 'Female', 'Both']
+  },
+  city: {
+    type: String
   }
-}, { _id: false });
+}, { _id: false }); // Keep _id: false as in original
 
 function imgLimit(val) {
   return val.length <= 6;
@@ -55,11 +57,9 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    // required: true,
     required: function() { return !this.googleId; },
     minlength: 6
   },
- 
   mobile: {
     type: String,
     required: function() { return !this.googleId; }, // Only required for non-Google users
@@ -77,7 +77,7 @@ const UserSchema = new Schema({
     }
   },
 
-  //Google Auth
+  // Google Auth
   googleId: {
     type: String,
     unique: true,
@@ -92,20 +92,49 @@ const UserSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: ['male', 'female', 'non-binary'],
+    enum: ['Male', 'Female', 'Non-Binary'],
     default: 'non-binary', // Google Auth
     required: true
   },
-  //Google Auth
   isVerified: {
     type: Boolean,
     default: false
   },
-  
+
   // Profile
   profile: {
     type: ProfileSchema,
     default: {}
+  },
+
+  // Requests
+  sendRequest: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
+  },
+  receiveRequest: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
+  },
+  blockRequest: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
+  },
+  matched: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    default: []
   },
 
   // System
