@@ -1,8 +1,19 @@
 import React from 'react'
 import { FaBell } from 'react-icons/fa'
+import { useLocation } from 'react-router-dom';
 
 
-const Header = () => {
+const Header = ({headline}) => {
+  const location = useLocation(); // Add this hook
+
+  // Hide footer on certain routes (e.g., chat page)
+  if (location.pathname === '/chat-box') {
+    return null;
+  }
+  // if (location.pathname.startsWith('/profile')) {
+  //   return null;
+  // }
+    
   return (
     <header className="flex items-center justify-between bg-pink-500 p-4 shadow-md">
       {/* Logo/Image */}
@@ -13,7 +24,7 @@ const Header = () => {
       />
 
       {/* Title */}
-      <h1 className="text-white text-xl font-bold">My Awesome App</h1>
+      <h1 className="text-white text-xl font-bold">{headline}</h1>
 
       {/* Notification Bell */}
       <div className="relative">

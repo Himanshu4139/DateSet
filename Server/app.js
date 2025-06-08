@@ -4,31 +4,50 @@ const express = require('express');
 const app = express();
 const connectDB = require('./db/db');
 connectDB();
-// server.js
+
+//added for socket.io
+
+const messageRoutes = require('./routes/message.routes');
+
+// ===== CORE MIDDLEWARE =====
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
+
 const cors = require('cors');
-
-
-const { urlencoded } = require('body-parser');
-
-const userRoutes = require('./routes/user.routes');
-
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-  
+
+// Body parsers
 app.use(express.json());
-app.use(urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
+
+// ===== ROUTES =====
+const userRoutes = require('./routes/user.routes');
+
+//socket app.use('/api/user', userRoutes);
+app.use('/api/messages', messageRoutes);
+
+
+app.use('/uploads', express.static('uploads'));
 
 
 app.get('/', (req, res) => {
-    res.send('Hello World');
+  res.send('Chat Server is Running');
 });
 
+// Authentication routes (must come first)
 app.use('/api/user', userRoutes);
 
 
+
+// ===== ERROR HANDLING =====
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// Export just the Express app
 module.exports = app;

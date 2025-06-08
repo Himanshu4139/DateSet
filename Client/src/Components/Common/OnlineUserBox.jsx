@@ -1,32 +1,32 @@
 import React from "react";
-import MsgData from "../../Data/MsgData";
+import { useNavigate } from "react-router-dom";
 
-const MessageBox = () => {
+const OnlineUserBox = ({ User }) => {
+  const navigate = useNavigate();
+
   return (
     <div>
-      {MsgData.map((user, index) => (
+      {User.map((user,ind) => (
         <div
-          key={index}
-          className="flex items-start p-4 bg-gray-100 rounded-lg shadow-md my-2"
+          key={ind} // Changed from index to user.id for better key
+          className="flex items-start p-2 bg-gray-100 rounded-lg shadow-md my-1 cursor-pointer hover:bg-gray-200 transition-colors"
+          onClick={() => navigate(`/chat-box/${user?._id}`)}
         >
           <div className="flex flex-1">
             <img
-              src={user.profilePicture} // ✅ Fix: Ensure image is coming from MsgData
-              alt={user.userName}
-              className="w-12 h-12 rounded-full mr-4"
+              src={user.profile.images[0]}
+              alt={user.name}
+              className="w-10 h-10 rounded-full mr-3"
             />
-            <div>
-              <h4 className="text-lg font-semibold text-gray-800">
-                {user.userName}
+            <div className="flex-1 min-w-0">
+              <h4 className="text-md font-semibold text-gray-800">
+                {user.name}
               </h4>
-              <p className="text-gray-600">{user.message}</p>
             </div>
           </div>
-          {/* Status dot */}
-          {/* Center Dot */}
           <div className="flex self-center">
             <span
-              className={`w-4 h-4 rounded-full ${
+              className={`w-3 h-3 rounded-full ${
                 user.isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"
               }`}
               title={user.isOnline ? "Online" : "Offline"}
@@ -38,4 +38,4 @@ const MessageBox = () => {
   );
 };
 
-export default MessageBox;
+export default OnlineUserBox;

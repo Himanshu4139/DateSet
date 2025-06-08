@@ -144,7 +144,7 @@ exports.googleAuth = async (req, res) => {
     };
 
     const userMobile = mobile || generateUniqueMobile();
-    const userGender = gender || 'non-binary';
+    const userGender = gender || 'Non-Binary';
 
     // Check for existing user
     let user = await User.findOne({ $or: [{ email }, { googleId }] });

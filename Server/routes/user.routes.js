@@ -4,12 +4,17 @@ const userController = require('../controllers/user.controller');
 
 router.post('/register',userController.register);
 router.post('/login',userController.login);
-router.get('/getUser',userController.getUser);
+
+router.get('/getUser',userController.getUser); //token user logged In user
+
 router.put('/updateUser',userController.updateUser);
 router.get('/allProfile',userController.allProfile);
+
 router.post('/rightSwipe/:id',userController.rightSwipe);
 router.post('/leftSwipe/:id',userController.leftSwipe);
-router.get('/me/:id', userController.me);
+
+router.get('/me/:id', userController.me); // Get user by ID
+
 router.get('/sendRequests',userController.sendRequests);
 router.get('/receiveRequests',userController.receiveRequests);
 router.get('/matches',userController.matches);

@@ -106,7 +106,7 @@ async function handleSignIn(e) {
             name: displayName || 'User',
             email,
             googleId: uid,
-            gender: 'non-binary' // Default gender
+            gender: 'Non-Binary' // Default gender
           };
     
           const response = await axios.post("http://localhost:4000/api/user/google-auth", payload);

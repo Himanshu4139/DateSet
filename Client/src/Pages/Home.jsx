@@ -25,6 +25,7 @@ const Home = () => {
   const accentHover = 'hover:bg-amber-500';
   const actionColor = 'bg-emerald-500';
   const actionHover = 'hover:bg-emerald-600';
+
   // Auto slide effect for images
   useEffect(() => {
     let interval;
@@ -144,6 +145,10 @@ const Home = () => {
     getAllProfile();
   }, []);
 
+
+     console.log(profiles);
+
+
   const calculateAge = (dateOfBirth) => {
     try {
       const birthDate = new Date(dateOfBirth);
@@ -255,7 +260,7 @@ const Home = () => {
             <h2 className="text-lg font-semibold mb-4 text-gray-800">Online Users</h2>
             <div className="overflow-y-auto max-h-64 pr-2">
               <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-4">
-              <OnlineUserBox/>
+              <OnlineUserBox User={profiles}/>
               </div>
             </div>
           </div>

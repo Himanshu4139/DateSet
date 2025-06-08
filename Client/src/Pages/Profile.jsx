@@ -169,7 +169,7 @@ const ProfilePage = () => {
 
     return (
         <div className="min-h-screen pb-16">
-          <Header />
+          {/* <Header /> */}
             <div className="max-w-lg mx-auto p-6 bg-white shadow-xl rounded-2xl text-gray-800 font-sans">
                 {/* Profile Header */}
                 <div className="flex items-center gap-6 mb-8">

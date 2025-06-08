@@ -93,7 +93,7 @@ const UserSchema = new Schema({
   gender: {
     type: String,
     enum: ['Male', 'Female', 'Non-Binary'],
-    default: 'non-binary', // Google Auth
+    default: 'Non-Binary', // Google Auth
     required: true
   },
   isVerified: {

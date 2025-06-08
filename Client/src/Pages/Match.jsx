@@ -351,7 +351,7 @@ const Match = () => {
 
       {/* Footer */}
       <footer className="fixed bottom-0 left-0 right-0 z-50">
-        <Footer />
+      <Footer activeTab={activeTab} setActiveTab={setActiveTab} />
       </footer>
     </div>
   );
