@@ -45,7 +45,8 @@ async function handleSignUp(e) {
          path: "/" ,
          expires: 30,
          sameSite: 'none',
-          secure: true
+          secure: true,
+          httpOnly: true
         });
       toast.success('Registration successful!');
       navigate("/");
@@ -80,7 +81,8 @@ async function handleSignIn(e) {
          path: "/" ,
          expires: 30,
          sameSite: 'none',
-          secure: true
+          secure: true,
+          httpOnly: true
         });
       toast.success('Login successful!');
       navigate("/");
@@ -127,7 +129,8 @@ async function handleSignIn(e) {
          path: "/" ,
          expires: 30,
          sameSite: 'none',
-          secure: true
+          secure: true,
+          httpOnly: true
         });
             toast.success(
               response.status === 201 
