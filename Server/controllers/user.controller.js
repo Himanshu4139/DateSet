@@ -35,6 +35,11 @@ module.exports.register = async (req, res) => {
       });
 
       const token = user.generateToken();
+      res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
 
       res.status(201).json({ 
           message: 'User registered successfully', 
@@ -89,6 +94,11 @@ module.exports.login = async (req, res) => {
       }
 
       const token = user.generateToken();
+       res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
       res.status(200).json({ 
           message: 'User logged in successfully', 
           token, 
@@ -160,9 +170,18 @@ exports.googleAuth = async (req, res) => {
       }
       
       await user.save();
+
+      const token = generateToken(user._id);
+
+      // Set cookie and return response
+       res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
       
       return res.status(200).json({
-        token: generateToken(user._id),
+        token: token,
         user: formatUserResponse(user)
       });
     }
