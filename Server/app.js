@@ -14,21 +14,12 @@ const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
 const cors = require('cors');
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://date-set.vercel.app'
-];
+
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['http://localhost:5173', 'https://date-set.vercel.app'], // Replace with your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
 
 
