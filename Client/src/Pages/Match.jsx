@@ -58,7 +58,7 @@ const Match = () => {
     };
 
     fetchMatchData();
-  },);
+  },[]);
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'N/A';

@@ -177,8 +177,8 @@ const Home = () => {
 
     getAllProfile();
 
-    const interval = setInterval(getAllProfile, 2000);
-    return () => clearInterval(interval);
+    // const interval = setInterval(getAllProfile, 2000);
+    // return () => clearInterval(interval);
   }, []);
 
   const calculateAge = (dateOfBirth) => {
