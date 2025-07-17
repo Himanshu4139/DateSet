@@ -8,6 +8,7 @@ import { BsThreeDotsVertical, BsGeoAlt } from "react-icons/bs";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import toast from "react-hot-toast";
+import Cookies from 'js-cookie';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -22,6 +23,7 @@ const Home = () => {
   const [swipeCount, setSwipeCount] = useState(0);
 
   const navigate = useNavigate();
+  const token = Cookies.get("token");
 
   // Check and reset swipe count if 12 hours have passed
   useEffect(() => {
@@ -129,6 +131,9 @@ const Home = () => {
       try {
         const res = await axios.get(`${API_URL}/api/user/allProfile`, {
           withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
 
         const currentUserProfile = await axios.get(`${API_URL}/api/user/getUser`, {

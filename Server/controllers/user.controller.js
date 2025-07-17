@@ -399,7 +399,7 @@ module.exports.updateUser = async (req, res) => {
 module.exports.allProfile = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({
         message: 'Authentication required',
