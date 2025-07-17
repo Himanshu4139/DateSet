@@ -17,9 +17,12 @@ const cors = require('cors');
 
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://date-set.vercel.app'], // Replace with your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: [
+    'http://localhost:5173', 
+    'https://date-set.vercel.app'
+  ],
   credentials: true,
+  exposedHeaders: ['set-cookie']
 }));
 
 

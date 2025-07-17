@@ -1,6 +1,17 @@
 const User = require('../models/user');
 const mongoose = require('mongoose');
 
+const setAuthCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    domain: process.env.NODE_ENV === 'production' ? '.dateset.onrender.com' : undefined,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    path: '/'
+  });
+};
+
 module.exports.register = async (req, res) => {
   try {
       const { email, password, name, mobile, gender } = req.body;
@@ -35,11 +46,7 @@ module.exports.register = async (req, res) => {
       });
 
       const token = user.generateToken();
-      res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  });
+      setAuthCookie(res, token);
 
       res.status(201).json({ 
           message: 'User registered successfully', 
@@ -94,11 +101,7 @@ module.exports.login = async (req, res) => {
       }
 
       const token = user.generateToken();
-       res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  });
+      setAuthCookie(res, token);
       res.status(200).json({ 
           message: 'User logged in successfully', 
           token, 
@@ -174,11 +177,7 @@ exports.googleAuth = async (req, res) => {
       const token = generateToken(user._id);
 
       // Set cookie and return response
-       res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  });
+      setAuthCookie(res, token);
       
       return res.status(200).json({
         token: token,
@@ -226,6 +225,18 @@ exports.googleAuth = async (req, res) => {
     });
   }
 };
+
+module.exports.logout = (req, res) => {
+  res.clearCookie('token', {
+    domain: process.env.NODE_ENV === 'production' ? '.dateset.onrender.com' : undefined,
+    path: '/',
+    secure: true,
+    sameSite: 'none',
+    httpOnly: true
+  });
+  res.status(200).json({ message: 'Logged out successfully' });
+};
+
 
 module.exports.getUser = async (req, res) => {
   try {
