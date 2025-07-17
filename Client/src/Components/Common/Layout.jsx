@@ -10,7 +10,7 @@ const Layout = () => {
   const [activeTab, setActiveTab] = useState('home');
 
   useEffect(() => {
-    if (!Cookies.get('client_token')) {
+    if (!Cookies.get('token')) {
       navigate('/auth');
       return;
     }
