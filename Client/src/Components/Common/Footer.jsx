@@ -16,8 +16,6 @@ const Footer = ({ activeTab = 'home', setActiveTab = () => {} }) => {
   useEffect(() => {
     const fetchReceiveRequests = async () => {
       try {
-        const token = Cookies.get('token');
-        if (!token) return;
         const res = await axios.get(`${API_URL}/api/user/receiveRequests`, {
           withCredentials: true,
         });
@@ -30,7 +28,7 @@ const Footer = ({ activeTab = 'home', setActiveTab = () => {} }) => {
     // Optionally, poll every 1s for real-time effect
     const interval = setInterval(fetchReceiveRequests, 1000);
     return () => clearInterval(interval);
-  },);
+  },[]);
 
   // Hide footer on certain routes (e.g., chat page)
   if (location.pathname.startsWith('/chat-box')) {
