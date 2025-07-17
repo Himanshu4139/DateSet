@@ -15,7 +15,7 @@ app.use(cookieParser());
 
 const cors = require('cors');
 app.use(cors({
-  origin: '*',
+  origin: 'https://date-set.vercel.app',
   credentials: true
 }));
 
