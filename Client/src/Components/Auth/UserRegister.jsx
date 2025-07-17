@@ -41,12 +41,12 @@ async function handleSignUp(e) {
     });
 
     if (response.status === 201) {
-        Cookies.set('client_token', response.data.token, {
-        secure: true,
-        sameSite: 'lax',
-        expires: 30
-      });
-
+      Cookies.set("token", response.data.token, {
+         path: "/" ,
+         expires: 30,
+         sameSite: 'none',
+          secure: true
+        });
       toast.success('Registration successful!');
       navigate("/");
     }
@@ -76,11 +76,12 @@ async function handleSignIn(e) {
     });
 
     if (response.status === 200) {
-      Cookies.set('client_token', response.data.token, {
-        secure: true,
-        sameSite: 'lax',
-        expires: 30
-      });
+      Cookies.set("token", response.data.token, {
+         path: "/" ,
+         expires: 30,
+         sameSite: 'none',
+          secure: true
+        });
       toast.success('Login successful!');
       navigate("/");
     }
@@ -122,10 +123,11 @@ async function handleSignIn(e) {
           const response = await axios.post(`${API_URL}/api/user/google-auth`, payload);
 
           if (response.status === 200 || response.status === 201) {
-            Cookies.set('client_token', response.data.token, {
-            secure: true,
-            sameSite: 'lax',
-            expires: 30
+            Cookies.set("token", response.data.token, {
+         path: "/" ,
+         expires: 30,
+         sameSite: 'none',
+          secure: true
         });
             toast.success(
               response.status === 201 

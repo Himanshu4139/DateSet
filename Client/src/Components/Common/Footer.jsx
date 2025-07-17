@@ -3,7 +3,6 @@ import { FaUser, FaEnvelope, FaHeart, FaSignOutAlt, FaHome } from 'react-icons/f
 import { useLocation, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import axios from 'axios';
-import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -37,7 +36,7 @@ const Footer = ({ activeTab = 'home', setActiveTab = () => {} }) => {
   }
 
   const handleNavigation = (tab) => {
-    if (!Cookies.get('client_token')) {
+    if (!Cookies.get('token')) {
       navigate('/auth');
       return;
     }
@@ -62,24 +61,10 @@ const Footer = ({ activeTab = 'home', setActiveTab = () => {} }) => {
     }
   };
 
-  // const handleLogout = () => {
-  //   Cookies.remove('client_token');
-  //   Cookies.remove('userData');
-  //   navigate('/auth');
-  // };
-
-   const handleLogout = async () => {
-    try {
-      await axios.post(`${API_URL}/api/user/logout`, {
-        withCredentials: true,
-      });
-      Cookies.remove('client_token');
-      navigate("/auth");
-      toast.success("Logged out successfully");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      toast.error("Logout failed");
-    }
+  const handleLogout = () => {
+    Cookies.remove('token');
+    Cookies.remove('userData');
+    navigate('/auth');
   };
 
   const getButtonStyle = (tab) => {

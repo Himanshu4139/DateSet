@@ -22,7 +22,6 @@ app.use(cors({
     'https://date-set.vercel.app'
   ],
   credentials: true,
-  exposedHeaders: ['set-cookie']
 }));
 
 

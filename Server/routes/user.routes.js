@@ -24,7 +24,7 @@ router.delete('/denyRequest/:id', userController.denyRequest);
 router.delete('/removeMatch/:id', userController.removeMatch);
 router.put('/subscribeUser', userController.subscribeUser);
 router.post('/premiumMatch/:id', userController.premiumMatch);
-router.post('/logout', userController.logout);
+// router.post('/logout', userController.logout);
 
 //Google Auth 
 router.post('/google-auth',userController.googleAuth);
