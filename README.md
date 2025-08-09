@@ -1,6 +1,6 @@
 # DateSet Link
 
-A modern dating platform designed for **meaningful connections**. DateSet Link helps users discover compatible matches, chat after mutual interest, and enjoy premium features for enhanced interaction.
+A modern dating platform designed for **meaningful connections**. DateSet Link helps users discover compatible matches, chat after mutual interest, and enjoy premium features for enhanced interaction.Whether you’re looking for love, friendship, or just someone who understands you, our intelligent matching system helps you meet like-minded people nearby or around the world.
 
 ## 🚀 Features
 
