@@ -1,13 +1,20 @@
-import React, {useState } from 'react';
-import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock } from 'react-icons/fa';
-import { FcGoogle } from 'react-icons/fc'; // Import Google icon
-import Header from '../Common/Header';
-import { GoogleAuthProvider,signInWithPopup } from 'firebase/auth';
+import React, { useState } from "react";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaLock,
+} from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc"; // Import Google icon
+import Header from "../Common/Header";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "./firebase";
-import { useNavigate } from 'react-router-dom';
-import Cookies from 'js-cookie';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 // For Vite projects
 const API_URL = import.meta.env.VITE_API_URL;
@@ -21,152 +28,179 @@ const AuthForm = () => {
   const [mobile, setMobile] = useState("");
   const [gender, setGender] = useState("");
 
-
   const navigate = useNavigate();
-
-
+  const token = Cookies.get("token"); // Retrieve the token from cookies
 
   // Sign Up handler
-async function handleSignUp(e) {
-  try {
-    e.preventDefault();
-    
-    if (!password || password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+  async function handleSignUp(e) {
+    try {
+      e.preventDefault();
 
-    const response = await axios.post(`${API_URL}/api/user/register`, {
-      email, password, name, mobile, gender
-    });
+      if (!password || password.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
 
-    if (response.status === 201) {
-      Cookies.set("token", response.data.token, {
-         path: "/" ,
-         expires: 30,
-         sameSite: 'none',
+      const response = await axios.post(
+        `${API_URL}/api/user/register`,
+        {
+          email,
+          password,
+          name,
+          mobile,
+          gender,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        Cookies.set("token", response.data.token, {
+          path: "/",
+          expires: 30,
+          sameSite: "none",
           secure: true,
         });
-      toast.success('Registration successful!');
-      navigate("/");
-    }
-  } catch (error) {
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      if (status === 400) {
-        toast.error('This email is already registered');
-      } 
-      else if (status === 403 && data.authMethod === 'google') {
-        toast.error('Account exists with Google. Please login via Google instead');
+        toast.success("Registration successful!");
+        navigate("/");
       }
-    } else {
-      toast.error('Registration failed. Please try again.');
+    } catch (error) {
+      if (error.response) {
+        const { status, data } = error.response;
+
+        if (status === 400) {
+          toast.error("This email is already registered");
+        } else if (status === 403 && data.authMethod === "google") {
+          toast.error(
+            "Account exists with Google. Please login via Google instead"
+          );
+        }
+      } else {
+        toast.error("Registration failed. Please try again.");
+      }
     }
   }
-}
 
-// Sign In handler
-async function handleSignIn(e) {
-  try {
-    e.preventDefault();
+  // Sign In handler
+  async function handleSignIn(e) {
+    try {
+      e.preventDefault();
 
-    const response = await axios.post(`${API_URL}/api/user/login`, {
-      email, password
-    });
+      const response = await axios.post(
+        `${API_URL}/api/user/login`,
+        {
+          email,
+          password,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    if (response.status === 200) {
-      Cookies.set("token", response.data.token, {
-         path: "/" ,
-         expires: 30,
-         sameSite: 'none',
-          secure: true
+      if (response.status === 200) {
+        Cookies.set("token", response.data.token, {
+          path: "/",
+          expires: 30,
+          sameSite: "none",
+          secure: true,
         });
-      toast.success('Login successful!');
-      navigate("/");
-    }
-  } catch (error) {
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      if (status === 401) {
-        toast.error('Invalid email or password');
+        toast.success("Login successful!");
+        navigate("/");
       }
-      else if (status === 403 && data.authMethod === 'google') {
-        toast.error('Please login via Google instead');
+    } catch (error) {
+      if (error.response) {
+        const { status, data } = error.response;
+
+        if (status === 401) {
+          toast.error("Invalid email or password");
+        } else if (status === 403 && data.authMethod === "google") {
+          toast.error("Please login via Google instead");
+        }
+      } else {
+        toast.error("Login failed. Please try again.");
       }
-    } else {
-      toast.error('Login failed. Please try again.');
     }
   }
-}
 
-    // Google login handler handleGoogleSignIn
-    async function handleGoogleSignIn() {
-      try {
-        //setIsLoading(true);
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        
-        
-        if (result.user) {
-          const { displayName, email, uid } = result.user;
-          
-          // Automatically set defaults without prompting user
-          const payload = {
-            name: displayName || 'User',
-            email,
-            googleId: uid,
-            gender: 'Non-Binary' // Default gender
-          };
+  // Google login handler
+  async function handleGoogleSignIn() {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
 
-          const response = await axios.post(`${API_URL}/api/user/google-auth`, payload);
+      if (result.user) {
+        const { displayName, email, uid } = result.user;
 
-          if (response.status === 200 || response.status === 201) {
-            Cookies.set("token", response.data.token, {
-         path: "/" ,
-         expires: 30,
-         sameSite: 'none',
-          secure: true
-        });
-            toast.success(
-              response.status === 201 
-                ? 'Account created successfully with Google!' 
-                : 'Logged in successfully with Google!'
-            );
-            navigate("/");
+        // Automatically set defaults without prompting user
+        const payload = {
+          name: displayName || "User",
+          email,
+          googleId: uid,
+          gender: "Non-Binary", // Default gender
+        };
+
+        const response = await axios.post(
+          `${API_URL}/api/user/google-auth`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
+        );
+
+        if (response.status === 200 || response.status === 201) {
+          Cookies.set("token", response.data.token, {
+            path: "/",
+            expires: 30,
+            sameSite: "none",
+            secure: true,
+          });
+          toast.success(
+            response.status === 201
+              ? "Account created successfully with Google!"
+              : "Logged in successfully with Google!"
+          );
+          navigate("/");
         }
-      } catch (error) {
-        console.error("Google authentication failed:", error);
-        
-        if (error.code === 'auth/popup-closed-by-user') {
-          toast.error("You closed the login popup. Please try again.");
-        } else if (error.code === 'auth/network-request-failed') {
-          toast.error("Network error. Please check your internet connection.");
-        } else {
-          toast.error(error.response?.data?.message || "Authentication failed. Please try again.");
-        }
-        
-        navigate("/auth");
-       } //finally {
-      //   //setIsLoading(false);
-      // }
-    }  
-   
+      }
+    } catch (error) {
+      console.error("Google authentication failed:", error);
+
+      if (error.code === "auth/popup-closed-by-user") {
+        toast.error("You closed the login popup. Please try again.");
+      } else if (error.code === "auth/network-request-failed") {
+        toast.error("Network error. Please check your internet connection.");
+      } else {
+        toast.error(
+          error.response?.data?.message ||
+            "Authentication failed. Please try again."
+        );
+      }
+
+      navigate("/auth");
+    }
+  }
 
   return (
     <div>
-      <Header/>
+      <Header />
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-500 ease-in-out">
             {/* Form header with toggle */}
             <div className="flex">
               <button
-                onClick={() => setIsLogin(true)}  
+                onClick={() => setIsLogin(true)}
                 className={`flex-1 py-4 px-6 text-center font-medium transition-colors duration-300 ${
-                  isLogin ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  isLogin
+                    ? "bg-pink-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 Sign In
@@ -174,7 +208,9 @@ async function handleSignIn(e) {
               <button
                 onClick={() => setIsLogin(false)}
                 className={`flex-1 py-4 px-6 text-center font-medium transition-colors duration-300 ${
-                  !isLogin ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  !isLogin
+                    ? "bg-pink-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 Sign Up
@@ -184,10 +220,13 @@ async function handleSignIn(e) {
             {/* Form container */}
             <div className="p-8 space-y-6">
               <h2 className="text-2xl font-bold text-center text-gray-800">
-                {isLogin ? 'Welcome back!' : 'Create your account'}
+                {isLogin ? "Welcome back!" : "Create your account"}
               </h2>
 
-              <form className="space-y-4" onSubmit={isLogin ? handleSignIn : handleSignUp}>
+              <form
+                className="space-y-4"
+                onSubmit={isLogin ? handleSignIn : handleSignUp}
+              >
                 {!isLogin && (
                   <div className="space-y-4">
                     {/* Username field */}
@@ -266,9 +305,14 @@ async function handleSignIn(e) {
                         type="checkbox"
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                      <span className="ml-2 text-sm text-gray-600">
+                        Remember me
+                      </span>
                     </label>
-                    <a href="#" className="text-sm text-red-600 hover:text-red-500">
+                    <a
+                      href="#"
+                      className="text-sm text-red-600 hover:text-red-500"
+                    >
                       Forgot password?
                     </a>
                   </div>
@@ -276,17 +320,24 @@ async function handleSignIn(e) {
 
                 {!isLogin && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Gender</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Gender
+                    </label>
                     <div className="grid grid-cols-3 gap-2">
-                      {['Male', 'Female', 'Non-Binary'].map((gender) => (
-                        <label key={gender} className="flex items-center space-x-2">
+                      {["Male", "Female", "Non-Binary"].map((gender) => (
+                        <label
+                          key={gender}
+                          className="flex items-center space-x-2"
+                        >
                           <input
                             type="radio"
                             value={gender}
                             onChange={(e) => setGender(e.target.value)}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                           />
-                          <span className="text-sm text-gray-700">{gender}</span>
+                          <span className="text-sm text-gray-700">
+                            {gender}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -296,10 +347,12 @@ async function handleSignIn(e) {
                 <button
                   type="submit"
                   className={`w-full py-3 px-4 rounded-lg font-medium text-white shadow-md hover:shadow-lg transition-all cursor-pointer ${
-                    isLogin ? 'bg-pink-500 hover:bg-pink-600' : 'bg-pink-500 hover:bg-pink-600'
+                    isLogin
+                      ? "bg-pink-500 hover:bg-pink-600"
+                      : "bg-pink-500 hover:bg-pink-600"
                   }`}
                 >
-                  {isLogin ? 'Sign In' : 'Sign Up'}
+                  {isLogin ? "Sign In" : "Sign Up"}
                 </button>
               </form>
 
@@ -323,7 +376,7 @@ async function handleSignIn(e) {
               <div className="text-center text-sm text-gray-600">
                 {isLogin ? (
                   <p>
-                    Don't have an account?{' '}
+                    Don't have an account?{" "}
                     <button
                       onClick={() => setIsLogin(false)}
                       className="text-pink-600 hover:text-blue-500 font-medium cursor-pointer"
@@ -333,7 +386,7 @@ async function handleSignIn(e) {
                   </p>
                 ) : (
                   <p>
-                    Already have an account?{' '}
+                    Already have an account?{" "}
                     <button
                       onClick={() => setIsLogin(true)}
                       className="text-pink-600 hover:text-purple-500 font-medium cursor-pointer"

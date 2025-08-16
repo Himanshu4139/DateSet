@@ -1,15 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../Components/Common/Header";
 import Footer from "../Components/Common/Footer";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import Cookies from "js-cookie"; // Import Cookies
 
 const Payment = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL; // For Vite projects
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY;
+  const token = Cookies.get("token"); // Retrieve the token from cookies
 
   // Dynamically load Razorpay script
   useEffect(() => {
@@ -25,38 +26,46 @@ const Payment = () => {
   const handleClick1 = async () => {
     try {
       // Creating order in Razorpay
-      const orderResponse = await axios.post(`${apiUrl}/api/payment/orderPayment`, { amount: 499 });
+      const orderResponse = await axios.post(
+        `${apiUrl}/api/payment/orderPayment`,
+        { amount: 499 },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const orderId = orderResponse.data.response.id;
 
       const options = {
         key: razorpayKey, // Your Razorpay key
         amount: 499 * 100, // Amount in paise
-        currency: 'INR',
-        name: 'DateSet',
-        description: 'Test Transaction',
-        image: 'https://example.com/your_logo',
+        currency: "INR",
+        name: "DateSet",
+        description: "Test Transaction",
+        image: "https://example.com/your_logo",
         order_id: orderId,
         handler: async function (response) {
           await handlePaymentSuccess(response);
         },
         prefill: {
-          name: 'Gaurav Kumar',
-          email: 'gaurav.kumar@example.com',
-          contact: '9000090000'
+          name: "Gaurav Kumar",
+          email: "gaurav.kumar@example.com",
+          contact: "9000090000",
         },
         notes: {
-          address: 'Razorpay Corporate Office'
+          address: "Razorpay Corporate Office",
         },
         theme: {
-          color: '#3399cc'
-        }
+          color: "#3399cc",
+        },
       };
 
       // Razorpay must be available on window after script loads
       if (window.Razorpay) {
         const rzp1 = new window.Razorpay(options);
 
-        rzp1.on('payment.failed', (error) => {
+        rzp1.on("payment.failed", (error) => {
           alert(`Payment failed: ${error.error.description}`);
         });
 
@@ -66,7 +75,7 @@ const Payment = () => {
         alert("Razorpay SDK failed to load. Please refresh and try again.");
       }
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error("Error placing order:", error);
     }
   };
 
@@ -76,30 +85,42 @@ const Payment = () => {
       const data = {
         razorpay_order_id,
         razorpay_payment_id,
-        razorpay_signature
+        razorpay_signature,
       };
 
-      const res = await axios.post(`${apiUrl}/api/payment/orderValidate`, data);
+      const res = await axios.post(`${apiUrl}/api/payment/orderValidate`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (res.data.success) {
-        toast.success('Payment successful!');
-        
-        const subscribeRes = await axios.put(`${apiUrl}/api/user/subscribeUser`, { subscribtion: true }, { withCredentials: true });
+        toast.success("Payment successful!");
+
+        const subscribeRes = await axios.put(
+          `${apiUrl}/api/user/subscribeUser`,
+          { subscribtion: true },
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (subscribeRes.data.success) {
           console.log(subscribeRes.data.message);
-          
-          toast.success('Subscription activated successfully!');
-          navigate('/');
-        }
-        else {
-          toast.error('Failed to activate subscription. Please try again.');
-          console.error('Subscription activation failed:', subscribeRes.data.message);
+
+          toast.success("Subscription activated successfully!");
+          navigate("/");
+        } else {
+          toast.error("Failed to activate subscription. Please try again.");
+          console.error("Subscription activation failed:", subscribeRes.data.message);
         }
       } else {
-        toast.error('Payment verification failed!');
+        toast.error("Payment verification failed!");
       }
     } catch (error) {
-      console.error('Error verifying payment:', error);
-      toast.error('Payment verification failed!');
+      console.error("Error verifying payment:", error);
+      toast.error("Payment verification failed!");
     }
   };
 
@@ -124,8 +145,19 @@ const Payment = () => {
             <div className="p-8">
               <div className="flex justify-center mb-8">
                 <div className="bg-pink-100 p-4 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-12 w-12 text-pink-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
               </div>
@@ -135,20 +167,31 @@ const Payment = () => {
               </h2>
 
               <ul className="space-y-4 mb-8">
-                {                  [
-                  "✨ Instant matching with compatible profiles",
-                  "💬 Unlimited messaging with all connections",
-                  "👀 See who viewed your profile",
-                  "🎯 Priority placement in search results",
-                  "🔒 Advanced privacy controls"
-                ].map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <svg className="h-5 w-5 text-pink-500 mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
+                {
+                  [
+                    "✨ Instant matching with compatible profiles",
+                    "💬 Unlimited messaging with all connections",
+                    "👀 See who viewed your profile",
+                    "🎯 Priority placement in search results",
+                    "🔒 Advanced privacy controls",
+                  ].map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <svg
+                        className="h-5 w-5 text-pink-500 mr-2 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
               </ul>
 
               <div className="bg-pink-50 p-6 rounded-lg mb-8">

@@ -2,34 +2,29 @@ import React, { useState, useEffect } from "react";
 import Header from "../Components/Common/Header";
 import Footer from "../Components/Common/Footer";
 import axios from "axios";
+import Cookies from "js-cookie"; // Import Cookies
 import { useNavigate } from "react-router-dom";
-import { 
-  MdMessage, 
-  MdFavorite, 
-  MdClose, 
+import {
+  MdMessage,
+  MdFavorite,
+  MdClose,
   MdInfo,
   MdBlock,
-  MdPersonRemove
+  MdPersonRemove,
 } from "react-icons/md";
-import { 
-  FaHeart, 
-  FaRegHeart,
-  FaCheck,
-  FaTimes
-} from "react-icons/fa";
-import { 
-  IoMdFlash 
-} from "react-icons/io";
-import { 
-  BsThreeDotsVertical, 
+import { FaHeart, FaRegHeart, FaCheck, FaTimes } from "react-icons/fa";
+import { IoMdFlash } from "react-icons/io";
+import {
+  BsThreeDotsVertical,
   BsGeoAlt,
   BsHeartFill,
-  BsHeart
+  BsHeart,
 } from "react-icons/bs";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const Match = () => {
+  const token = Cookies.get("token"); // Retrieve the token from cookies
   const [activeTab, setActiveTab] = useState("matches");
   const [activeView, setActiveView] = useState("match");
   const [sendUsers, setSendUsers] = useState([]);
@@ -44,11 +39,26 @@ const Match = () => {
     const fetchMatchData = async () => {
       try {
         const [sendRes, receiveRes, matchRes] = await Promise.all([
-          axios.get(`${API_URL}/api/user/sendRequests`, { withCredentials: true }),
-          axios.get(`${API_URL}/api/user/receiveRequests`, { withCredentials: true }),
-          axios.get(`${API_URL}/api/user/matches`, { withCredentials: true })
+          axios.get(`${API_URL}/api/user/sendRequests`, {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          axios.get(`${API_URL}/api/user/receiveRequests`, {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          axios.get(`${API_URL}/api/user/matches`, {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
         ]);
-        
+
         setSendUsers(sendRes.data.data || []);
         setReceiveUsers(receiveRes.data.data || []);
         setMatchUsers(matchRes.data.data || []);
@@ -58,99 +68,130 @@ const Match = () => {
     };
 
     fetchMatchData();
-  },);
+  }, [reload]);
 
   const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return 'N/A';
+    if (!dateOfBirth) return "N/A";
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
     return age;
   };
 
-
   const removeSentRequest = async (userId) => {
     try {
-      const response = await axios.delete(`${API_URL}/api/user/removeSentRequest/${userId}`, {
-        withCredentials: true,
-      });
+      const response = await axios.delete(
+        `${API_URL}/api/user/removeSentRequest/${userId}`,
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.data.success) {
-        setReload(r => !r);
+        setReload((r) => !r);
       }
     } catch (error) {
-      console.error('Error removing sent request:', error);
+      console.error("Error removing sent request:", error);
     }
   };
 
   const acceptRequest = async (userId) => {
     try {
-        const response = await axios.put(`${API_URL}/api/user/acceptRequest/${userId}`, {}, {
-            withCredentials: true,
-        });
-
-        if (response.data.success) {
-            setReload(r => !r);
+      const response = await axios.put(
+        `${API_URL}/api/user/acceptRequest/${userId}`,
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-    } catch (error) {
-        console.error('Error accepting request:', error);
-    }
-  }
-
-  const denyRequest = async (userId) => {
-    try {
-      const response = await axios.delete(`${API_URL}/api/user/denyRequest/${userId}`, {
-        withCredentials: true,
-      });
+      );
 
       if (response.data.success) {
-        setReload(r => !r);
+        setReload((r) => !r);
       }
     } catch (error) {
-      console.error('Error denying request:', error);
+      console.error("Error accepting request:", error);
     }
   };
 
+  const denyRequest = async (userId) => {
+    try {
+      const response = await axios.delete(
+        `${API_URL}/api/user/denyRequest/${userId}`,
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setReload((r) => !r);
+      }
+    } catch (error) {
+      console.error("Error denying request:", error);
+    }
+  };
 
   const removeMatch = async (userId) => {
     try {
       // 1. Remove the match
-      const response = await axios.delete(`${API_URL}/api/user/removeMatch/${userId}`, {
-        withCredentials: true,
-      });
+      const response = await axios.delete(
+        `${API_URL}/api/user/removeMatch/${userId}`,
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       // 2. Delete all messages between current user and this user
       await axios.delete(`${API_URL}/api/messages/conversation/${userId}`, {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.data.success) {
-        setReload(r => !r);
+        setReload((r) => !r);
       }
     } catch (error) {
-      console.error('Error removing match or deleting messages:', error);
+      console.error("Error removing match or deleting messages:", error);
     }
   };
 
-
   const renderUserCard = (user) => {
     if (!user || !user.profile) return null;
-    
+
     const userProfile = user.profile;
-    const mainImage = userProfile.images?.[0] || '/default-profile.jpg';
+    const mainImage = userProfile.images?.[0] || "/default-profile.jpg";
     const age = calculateAge(userProfile.dateOfBirth);
-    const location = userProfile.city || 'Location not specified';
-    const lastActive = new Date(user.updatedAt).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
+    const location = userProfile.city || "Location not specified";
+    const lastActive = new Date(user.updatedAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
     });
 
     return (
-      <div key={user._id} className="relative bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 mb-6">
+      <div
+        key={user._id}
+        className="relative bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 mb-6"
+      >
         {/* User Image with Rounded Corners */}
         <div className="relative h-64 w-full">
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 rounded-t-xl overflow-hidden">
@@ -160,18 +201,24 @@ const Match = () => {
               className="h-full w-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = '/default-profile.jpg';
+                e.target.src = "/default-profile.jpg";
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-t-xl" />
           </div>
-          
+
           {/* Online Status */}
           <div className="absolute top-3 right-3 flex items-center">
-            <span className={`w-3 h-3 rounded-full mr-1 ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
-            <span className="text-xs text-white">{user.isOnline ? 'Online' : 'Offline'}</span>
+            <span
+              className={`w-3 h-3 rounded-full mr-1 ${
+                user.isOnline ? "bg-green-500" : "bg-gray-400"
+              }`}
+            />
+            <span className="text-xs text-white">
+              {user.isOnline ? "Online" : "Offline"}
+            </span>
           </div>
-          
+
           {/* Basic Info Overlay */}
           <div className="absolute bottom-4 left-4 right-4 text-white">
             <div className="flex justify-between items-end">
@@ -184,7 +231,7 @@ const Match = () => {
                   <span>{location}</span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => navigate(`/user-profile/${user._id}`)}
                 className="bg-white/20 backdrop-blur-sm rounded-full p-2 hover:bg-white/30 transition"
               >
@@ -198,9 +245,11 @@ const Match = () => {
         <div className="p-5">
           {/* Bio */}
           {userProfile.bio && (
-            <p className="text-gray-700 mb-4 line-clamp-2">"{userProfile.bio}"</p>
+            <p className="text-gray-700 mb-4 line-clamp-2">
+              "{userProfile.bio}"
+            </p>
           )}
-          
+
           {/* Interests */}
           {userProfile.interests?.length > 0 && (
             <div className="mb-4">
@@ -216,7 +265,7 @@ const Match = () => {
               </div>
             </div>
           )}
-          
+
           {/* Last Active */}
           <div className="text-xs text-gray-500 mb-4">
             Last active: {lastActive}
@@ -224,7 +273,7 @@ const Match = () => {
 
           {/* Action Buttons */}
           <div className="flex justify-between space-x-3">
-            {activeView === 'send' && (
+            {activeView === "send" && (
               <>
                 <button
                   onClick={() => navigate(`/user-profile/${user._id}`)}
@@ -240,8 +289,8 @@ const Match = () => {
                 </button>
               </>
             )}
-            
-            {activeView === 'receive' && (
+
+            {activeView === "receive" && (
               <>
                 <button
                   onClick={() => acceptRequest(user._id)}
@@ -257,8 +306,8 @@ const Match = () => {
                 </button>
               </>
             )}
-            
-            {activeView === 'match' && (
+
+            {activeView === "match" && (
               <>
                 <button
                   onClick={() => navigate(`/chat-box/${user._id}`)}
@@ -282,16 +331,24 @@ const Match = () => {
 
   return (
     <>
-    <Header />
-    <Footer activeTab="matches" setActiveTab={setActiveTab} />
-    <div className="fixed top-0 left-0 right-0 mt-18 z-50 bg-white shadow-md">
+      <Header />
+      <Footer activeTab="matches" setActiveTab={setActiveTab} />
+      <div className="fixed top-0 left-0 right-0 mt-18 z-50 bg-white shadow-md">
         {/* Tab Navigation */}
         <div className="container mx-auto px-4">
           <div className="flex justify-between border-b border-gray-200">
             {[
-              { id: 'match', label: 'Matches', icon: <BsHeartFill className="mr-2" /> },
-              { id: 'receive', label: 'Requests', icon: <FaRegHeart className="mr-2" /> },
-              { id: 'send', label: 'Sent', icon: <BsHeart className="mr-2" /> }
+              {
+                id: "match",
+                label: "Matches",
+                icon: <BsHeartFill className="mr-2" />,
+              },
+              {
+                id: "receive",
+                label: "Requests",
+                icon: <FaRegHeart className="mr-2" />,
+              },
+              { id: "send", label: "Sent", icon: <BsHeart className="mr-2" /> },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -312,65 +369,76 @@ const Match = () => {
           </div>
         </div>
       </div>
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-pink-50 to-purple-50">
-      {/* Fixed Header */}
-    
-      {/* Main Content Area */}
-      <main className="flex-grow pt-40 pb-12 px-4 overflow-y-auto">
-        
-        <div className="max-w-md mx-auto">
-          {/* User Cards */}
-          {activeView === "send" && sendUsers.map(renderUserCard)}
-          {activeView === "receive" && receiveUsers.map(renderUserCard)}
-          {activeView === "match" && matchUsers.map(renderUserCard)}
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-pink-50 to-purple-50">
+        {/* Fixed Header */}
 
-          {/* Empty States */}
-          {activeView === "send" && sendUsers.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-32 h-32 mx-auto mb-6 bg-pink-100 rounded-full flex items-center justify-center">
-                <FaRegHeart className="text-5xl text-pink-400" />
+        {/* Main Content Area */}
+        <main className="flex-grow pt-40 pb-12 px-4 overflow-y-auto">
+          <div className="max-w-md mx-auto">
+            {/* User Cards */}
+            {activeView === "send" && sendUsers.map(renderUserCard)}
+            {activeView === "receive" && receiveUsers.map(renderUserCard)}
+            {activeView === "match" && matchUsers.map(renderUserCard)}
+
+            {/* Empty States */}
+            {activeView === "send" && sendUsers.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-32 h-32 mx-auto mb-6 bg-pink-100 rounded-full flex items-center justify-center">
+                  <FaRegHeart className="text-5xl text-pink-400" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-700 mb-2">
+                  No sent requests
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Your sent requests will appear here
+                </p>
+                <button
+                  className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-full shadow hover:shadow-lg transition"
+                  onClick={() => navigate("/")}
+                >
+                  Discover People
+                </button>
               </div>
-              <h3 className="text-xl font-medium text-gray-700 mb-2">No sent requests</h3>
-              <p className="text-gray-500 mb-6">Your sent requests will appear here</p>
-              <button
-                className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-full shadow hover:shadow-lg transition"
-                onClick={() => navigate('/')}
-              >
-                Discover People
-              </button>
-            </div>
-          )}
+            )}
 
-          {activeView === "receive" && receiveUsers.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-32 h-32 mx-auto mb-6 bg-pink-100 rounded-full flex items-center justify-center">
-                <BsHeart className="text-5xl text-pink-400" />
+            {activeView === "receive" && receiveUsers.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-32 h-32 mx-auto mb-6 bg-pink-100 rounded-full flex items-center justify-center">
+                  <BsHeart className="text-5xl text-pink-400" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-700 mb-2">
+                  No new requests
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  When someone likes you, they'll appear here
+                </p>
               </div>
-              <h3 className="text-xl font-medium text-gray-700 mb-2">No new requests</h3>
-              <p className="text-gray-500 mb-6">When someone likes you, they'll appear here</p>
-            </div>
-          )}
+            )}
 
-          {activeView === "match" && matchUsers.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-32 h-32 mx-auto mb-6 bg-pink-100 rounded-full flex items-center justify-center">
-                <BsHeartFill className="text-5xl text-pink-400" />
+            {activeView === "match" && matchUsers.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-32 h-32 mx-auto mb-6 bg-pink-100 rounded-full flex items-center justify-center">
+                  <BsHeartFill className="text-5xl text-pink-400" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-700 mb-2">
+                  No matches yet
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Start swiping to find your perfect match!
+                </p>
+                <button
+                  className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-full shadow hover:shadow-lg transition"
+                  onClick={() => navigate("/")}
+                >
+                  Start Matching
+                </button>
               </div>
-              <h3 className="text-xl font-medium text-gray-700 mb-2">No matches yet</h3>
-              <p className="text-gray-500 mb-6">Start swiping to find your perfect match!</p>
-              <button
-                className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-full shadow hover:shadow-lg transition"
-                onClick={() => navigate('/')}
-              >
-                Start Matching
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
+            )}
+          </div>
+        </main>
 
-      {/* Fixed Footer */}
-    </div>
+        {/* Fixed Footer */}
+      </div>
     </>
   );
 };

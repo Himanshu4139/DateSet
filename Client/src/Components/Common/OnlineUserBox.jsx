@@ -1,12 +1,29 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie"; // Import Cookies
+import axios from "axios"; // Import axios if API calls are added
 
 const OnlineUserBox = ({ User }) => {
   const navigate = useNavigate();
+  const token = Cookies.get("token"); // Retrieve the token from cookies
+
+  // Example API call (if needed in the future)
+  const fetchUserDetails = async (userId) => {
+    try {
+      const response = await axios.get(`API_ENDPOINT/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+  };
 
   return (
     <div>
-      {User.map((user,ind) => (
+      {User.map((user, ind) => (
         <div
           key={ind} // Changed from index to user.id for better key
           className="flex items-start p-2 bg-gray-100 rounded-lg shadow-md my-1 cursor-pointer hover:bg-gray-200 transition-colors"
