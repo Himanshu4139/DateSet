@@ -4,7 +4,7 @@ const User = require('../models/user');
 // Get chat messages with another user (using cookie token for auth)
 exports.getMessages = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const decoded = User.verifyToken(token);
     const currentUserId = decoded.id;
@@ -26,7 +26,7 @@ exports.getMessages = async (req, res) => {
 // Save a new message (text or file)
 exports.sendMessage = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const decoded = User.verifyToken(token);
     const currentUserId = decoded.id;
@@ -49,7 +49,7 @@ exports.sendMessage = async (req, res) => {
 // Edit a message
 exports.editMessage = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const decoded = User.verifyToken(token);
     const currentUserId = decoded.id;
@@ -73,7 +73,7 @@ exports.editMessage = async (req, res) => {
 // Delete a message
 exports.deleteMessage = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const decoded = User.verifyToken(token);
     const currentUserId = decoded.id;
@@ -95,7 +95,7 @@ exports.deleteMessage = async (req, res) => {
 // Delete all messages between current user and another user
 exports.deleteConversation = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const decoded = User.verifyToken(token);
     const currentUserId = decoded.id;

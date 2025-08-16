@@ -214,7 +214,7 @@ exports.googleAuth = async (req, res) => {
 module.exports.getUser = async (req, res) => {
   try {
     // 1. Validate token presence
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ 
         message: 'Authentication required - No token found',
@@ -289,7 +289,7 @@ module.exports.getUser = async (req, res) => {
 module.exports.updateUser = async (req, res) => {
   try {
     // 1. Verify and decode token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ 
         message: 'Authentication required', 
@@ -456,7 +456,7 @@ module.exports.allProfile = async (req, res) => {
 module.exports.rightSwipe = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id;
     if (!token) {
       return res.status(401).json({
@@ -516,7 +516,7 @@ module.exports.rightSwipe = async (req, res) => {
 module.exports.leftSwipe = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id;
     if (!token) {
       return res.status(401).json({
@@ -613,7 +613,7 @@ module.exports.me = async (req, res) => {
 module.exports.sendRequests = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({
         message: 'Authentication required',
@@ -662,7 +662,7 @@ module.exports.sendRequests = async (req, res) => {
 module.exports.receiveRequests = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({
         message: 'Authentication required',
@@ -711,7 +711,7 @@ module.exports.receiveRequests = async (req, res) => {
 module.exports.matches = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({
         message: 'Authentication required',
@@ -760,7 +760,7 @@ module.exports.matches = async (req, res) => {
 module.exports.removeSentRequest = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id; // ID of the target user
     if (!token) {
       return res.status(401).json({
@@ -818,7 +818,7 @@ module.exports.removeSentRequest = async (req, res) => {
 module.exports.acceptRequest = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id; // ID of the target user
     if (!token) {
       return res.status(401).json({
@@ -883,7 +883,7 @@ module.exports.acceptRequest = async (req, res) => {
 module.exports.denyRequest = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id; // ID of the target user
     if (!token) {
       return res.status(401).json({
@@ -941,7 +941,7 @@ module.exports.denyRequest = async (req, res) => {
 module.exports.removeMatch = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id; // ID of the target user
     if (!token) {
       return res.status(401).json({
@@ -999,7 +999,7 @@ module.exports.removeMatch = async (req, res) => {
 module.exports.subscribeUser = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({
         message: 'Authentication required',
@@ -1049,7 +1049,7 @@ module.exports.subscribeUser = async (req, res) => {
 module.exports.premiumMatch = async (req, res) => {
   try {
     // 1. Verify and decode the token
-    const token = req.cookies.token;
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     const id = req.params.id; // ID of the target user
     if (!token) {
       return res.status(401).json({
