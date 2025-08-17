@@ -23,11 +23,13 @@ A modern dating platform designed for **meaningful connections**. DateSet Link h
 **Frontend**  
 - HTML  
 - Tailwind CSS  
-- React.js  
+- React.js
+- firebase (google auth)
 
 **Backend**  
 - Node.js  
-- Express.js  
+- Express.js
+- socket.io
 
 **Database**  
 - MongoDB  
