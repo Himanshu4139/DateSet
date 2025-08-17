@@ -632,7 +632,7 @@ const Chat = ({ avatar }) => {
             }
             onKeyDown={handleKeyPress}
             placeholder={
-              editingMessageId ? "Edit your message..." : "Type a message..."
+              editingMessageId ? "Edit your message...." : "Type a message...."
             }
             className="flex-1 py-2 px-3 bg-transparent focus:outline-none text-gray-700 placeholder-pink-400"
             disabled={isLoading}
